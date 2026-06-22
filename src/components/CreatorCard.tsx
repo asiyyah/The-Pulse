@@ -1,6 +1,6 @@
 'use client'
 
-import { memo, useCallback } from 'react'
+import { memo, useCallback, useRef } from 'react'
 import type { Creator } from '@/lib/types'
 import { useFollowCreator } from '@/hooks/useFollowCreator'
 import { usePrefetchCreator } from '@/hooks/useCreators'
@@ -12,13 +12,15 @@ interface CreatorCardProps {
 function CreatorCardInner({ creator }: CreatorCardProps) {
   const followMutation = useFollowCreator()
   const prefetchCreator = usePrefetchCreator()
+  const pendingActionRef = useRef<'follow' | 'unfollow' | null>(null)
 
   const isMutating = followMutation.isPending && followMutation.variables === creator.id
 
   const handleFollow = useCallback(() => {
     if (isMutating) return
+    pendingActionRef.current = creator.isFollowing ? 'unfollow' : 'follow'
     followMutation.mutate(creator.id)
-  }, [followMutation, creator.id, isMutating])
+  }, [followMutation, creator.id, isMutating, creator.isFollowing])
 
   const handleMouseEnter = useCallback(() => {
     prefetchCreator(creator.id)
@@ -60,11 +62,11 @@ function CreatorCardInner({ creator }: CreatorCardProps) {
           }`}
         >
           {isMutating
-            ? creator.isFollowing
-              ? 'Unfollowing...'
-              : 'Following...'
+            ? pendingActionRef.current === 'follow'
+              ? 'Following...'
+              : 'Unfollowing...'
             : creator.isFollowing
-              ? 'Following'
+              ? 'Unfollow'
               : 'Follow'}
         </button>
       </div>
